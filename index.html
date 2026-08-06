@@ -437,8 +437,8 @@
             <div class="panel">
                 <div class="panel-header"><strong>Daftar Pelanggan</strong></div>
                 <table>
-                    <thead><tr><th>Nama</th><th>Email</th><th>Total Order</th><th>Total Belanja</th><th>Daftar Sejak</th></tr></thead>
-                    <tbody id="pelanggan-tbody"><tr><td colspan="5" class="empty-msg">Memuat...</td></tr></tbody>
+                    <thead><tr><th>Nama</th><th>Email</th><th>No. WA</th><th>Alamat</th><th>Total Order</th><th>Total Belanja</th><th>Daftar Sejak</th></tr></thead>
+                    <tbody id="pelanggan-tbody"><tr><td colspan="7" class="empty-msg">Memuat...</td></tr></tbody>
                 </table>
             </div>
         </section>
@@ -1073,20 +1073,22 @@ async function loadCustomers() {
     try {
         const customers = await apiFetch('/customers');
         if (!customers.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">Belum ada pelanggan.</td></tr>';
+            tbody.innerHTML = '<tr><td colspan="7" class="empty-msg">Belum ada pelanggan.</td></tr>';
             return;
         }
         tbody.innerHTML = customers.map(c => `
             <tr>
                 <td>${c.name}</td>
                 <td>${c.email}</td>
+                <td>${c.phone || '-'}</td>
+                <td>${c.address || '-'}</td>
                 <td>${c.orders_count ?? 0}</td>
                 <td>${formatRupiah(c.total_belanja || 0)}</td>
                 <td>${new Date(c.created_at).toLocaleDateString('id-ID')}</td>
             </tr>
         `).join('');
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">${err.message}</td></tr>`;
+        tbody.innerHTML = `<tr><td colspan="7" class="empty-msg">${err.message}</td></tr>`;
     }
 }
 

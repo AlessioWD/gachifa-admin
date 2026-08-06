@@ -353,6 +353,7 @@
             <a data-page="kategori" onclick="showPage('kategori', this)"><i class="fas fa-tags"></i> Kategori</a>
             <a data-page="order" onclick="showPage('order', this)"><i class="fas fa-receipt"></i> Order</a>
             <a data-page="pesan" onclick="showPage('pesan', this)"><i class="fas fa-envelope"></i> Pesan Masuk</a>
+            <a data-page="pelanggan" onclick="showPage('pelanggan', this)"><i class="fas fa-users"></i> Pelanggan</a>
         </nav>
         <button class="logout-btn" onclick="logoutAdmin()"><i class="fas fa-right-from-bracket"></i> Logout</button>
     </aside>
@@ -425,6 +426,18 @@
                 <table>
                     <thead><tr><th>Nama</th><th>Email</th><th>Telepon</th><th>Pesan</th><th>Aksi</th></tr></thead>
                     <tbody id="pesan-tbody"><tr><td colspan="5" class="empty-msg">Memuat...</td></tr></tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- PELANGGAN -->
+        <section id="page-pelanggan" class="page">
+            <h1>Pelanggan</h1>
+            <div class="panel">
+                <div class="panel-header"><strong>Daftar Pelanggan</strong></div>
+                <table>
+                    <thead><tr><th>Nama</th><th>Email</th><th>Total Order</th><th>Total Belanja</th><th>Daftar Sejak</th></tr></thead>
+                    <tbody id="pelanggan-tbody"><tr><td colspan="5" class="empty-msg">Memuat...</td></tr></tbody>
                 </table>
             </div>
         </section>
@@ -580,6 +593,7 @@ function enterAdminApp() {
     loadProducts();
     loadOrders();
     loadContacts();
+    loadCustomers();
 }
 
 /* ===== HAMBURGER MENU (MOBILE) ===== */
@@ -881,6 +895,29 @@ async function deleteContact(id) {
         loadDashboard();
     } catch (err) {
         showToast(err.message, true);
+    }
+}
+
+/* ===== PELANGGAN ===== */
+async function loadCustomers() {
+    const tbody = document.getElementById('pelanggan-tbody');
+    try {
+        const customers = await apiFetch('/customers');
+        if (!customers.length) {
+            tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">Belum ada pelanggan.</td></tr>';
+            return;
+        }
+        tbody.innerHTML = customers.map(c => `
+            <tr>
+                <td>${c.name}</td>
+                <td>${c.email}</td>
+                <td>${c.orders_count ?? 0}</td>
+                <td>${formatRupiah(c.total_belanja || 0)}</td>
+                <td>${new Date(c.created_at).toLocaleDateString('id-ID')}</td>
+            </tr>
+        `).join('');
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">${err.message}</td></tr>`;
     }
 }
 

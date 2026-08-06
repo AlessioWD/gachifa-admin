@@ -495,6 +495,10 @@
                 <label>Teks Min Order (opsional, misal: Min Order: 20 pcs/1 Pax)</label>
                 <input type="text" id="produk-min-order" placeholder="Contoh: Min Order: 20 pcs/1 Pax">
             </div>
+            <div class="field">
+                <label>Jumlah Min Order (angka, dipakai sistem untuk otomatis isi keranjang)</label>
+                <input type="number" id="produk-min-order-qty" min="1" placeholder="Contoh: 20" value="1">
+            </div>
             <div class="modal-actions">
                 <button type="button" class="btn" style="background:#ccc;color:#333;" onclick="closeModal('produk-modal')">Batal</button>
                 <button type="submit" class="btn" id="produk-submit-btn">Simpan</button>
@@ -739,6 +743,7 @@ function openProductModal(product = null) {
 
     document.getElementById('produk-isi').value = product ? (product.isi_text || '') : '';
     document.getElementById('produk-min-order').value = product ? (product.min_order_text || '') : '';
+    document.getElementById('produk-min-order-qty').value = product ? (product.min_order_qty || 1) : 1;
 
     openModal('produk-modal');
 }
@@ -788,6 +793,7 @@ document.getElementById('produk-form').addEventListener('submit', async (e) => {
     formData.append('badge_label', badgeFinal);
     formData.append('isi_text', document.getElementById('produk-isi').value.trim());
     formData.append('min_order_text', document.getElementById('produk-min-order').value.trim());
+    formData.append('min_order_qty', document.getElementById('produk-min-order-qty').value || 1);
 
     const imageFile = document.getElementById('produk-image').files[0];
     if (imageFile) formData.append('image', imageFile);

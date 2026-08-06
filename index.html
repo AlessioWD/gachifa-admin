@@ -588,6 +588,8 @@ function logoutAdmin() {
 function enterAdminApp() {
     document.getElementById('login-screen').style.display = 'none';
     document.getElementById('admin-app').style.display = 'flex';
+    const dashboardLink = document.querySelector('.sidebar nav a[data-page="dashboard"]');
+    showPage('dashboard', dashboardLink);
     loadDashboard();
     loadCategories();
     loadProducts();

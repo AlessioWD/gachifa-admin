@@ -470,6 +470,31 @@
                 <label>Stok</label>
                 <input type="number" id="produk-stock" min="0" required>
             </div>
+            <div class="field">
+                <label>Gambar Produk</label>
+                <input type="file" id="produk-image" accept="image/*">
+                <img id="produk-image-preview" src="" alt="" style="display:none;max-width:120px;margin-top:8px;border-radius:8px;">
+            </div>
+            <div class="field">
+                <label>Badge (opsional)</label>
+                <select id="produk-badge">
+                    <option value="">Tanpa badge</option>
+                    <option value="BEST SELLER">BEST SELLER</option>
+                    <option value="MIN ORDER">MIN ORDER</option>
+                    <option value="PROMO">PROMO</option>
+                    <option value="NEW">NEW</option>
+                    <option value="__custom__">Custom...</option>
+                </select>
+                <input type="text" id="produk-badge-custom" placeholder="Tulis badge sendiri" style="display:none;margin-top:6px;">
+            </div>
+            <div class="field">
+                <label>Teks "Isi" (opsional, misal: Isi 28 slice)</label>
+                <input type="text" id="produk-isi" placeholder="Contoh: Isi 28 slice">
+            </div>
+            <div class="field">
+                <label>Teks Min Order (opsional, misal: Min Order: 20 pcs/1 Pax)</label>
+                <input type="text" id="produk-min-order" placeholder="Contoh: Min Order: 20 pcs/1 Pax">
+            </div>
             <div class="modal-actions">
                 <button type="button" class="btn" style="background:#ccc;color:#333;" onclick="closeModal('produk-modal')">Batal</button>
                 <button type="submit" class="btn" id="produk-submit-btn">Simpan</button>
@@ -523,7 +548,11 @@ function formatRupiah(n) {
 async function apiFetch(path, options = {}) {
     const headers = options.headers || {};
     headers['Accept'] = 'application/json';
-    if (options.body) headers['Content-Type'] = 'application/json';
+    // Kalau body-nya FormData (upload gambar), JANGAN set Content-Type manual.
+    // Browser yang akan set otomatis (multipart/form-data; boundary=...).
+    if (options.body && !(options.body instanceof FormData)) {
+        headers['Content-Type'] = 'application/json';
+    }
     if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
 
     const res = await fetch(`${API_BASE_URL}${path}`, { ...options, headers });
@@ -678,8 +707,63 @@ function openProductModal(product = null) {
     document.getElementById('produk-stock').value = product ? product.stock : '';
     if (product) catSelect.value = product.category_id;
 
+    // Reset file input (browser tidak izinkan isi otomatis untuk alasan keamanan)
+    document.getElementById('produk-image').value = '';
+    const preview = document.getElementById('produk-image-preview');
+    if (product && product.image_url) {
+        preview.src = product.image_url;
+        preview.style.display = 'inline-block';
+    } else {
+        preview.style.display = 'none';
+        preview.src = '';
+    }
+
+    // Badge: kalau nilainya salah satu opsi bawaan, pilih itu; kalau bukan, pakai "Custom..."
+    const badgeSelect = document.getElementById('produk-badge');
+    const badgeCustom = document.getElementById('produk-badge-custom');
+    const existingBadge = product ? (product.badge_label || '') : '';
+    const badgePresetValues = Array.from(badgeSelect.options).map(o => o.value);
+    if (!existingBadge) {
+        badgeSelect.value = '';
+        badgeCustom.style.display = 'none';
+        badgeCustom.value = '';
+    } else if (badgePresetValues.includes(existingBadge)) {
+        badgeSelect.value = existingBadge;
+        badgeCustom.style.display = 'none';
+        badgeCustom.value = '';
+    } else {
+        badgeSelect.value = '__custom__';
+        badgeCustom.style.display = 'block';
+        badgeCustom.value = existingBadge;
+    }
+
+    document.getElementById('produk-isi').value = product ? (product.isi_text || '') : '';
+    document.getElementById('produk-min-order').value = product ? (product.min_order_text || '') : '';
+
     openModal('produk-modal');
 }
+
+// Tampilkan input custom kalau badge "Custom..." dipilih
+document.getElementById('produk-badge').addEventListener('change', (e) => {
+    const badgeCustom = document.getElementById('produk-badge-custom');
+    if (e.target.value === '__custom__') {
+        badgeCustom.style.display = 'block';
+        badgeCustom.focus();
+    } else {
+        badgeCustom.style.display = 'none';
+        badgeCustom.value = '';
+    }
+});
+
+// Preview gambar begitu file dipilih
+document.getElementById('produk-image').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    const preview = document.getElementById('produk-image-preview');
+    if (file) {
+        preview.src = URL.createObjectURL(file);
+        preview.style.display = 'inline-block';
+    }
+});
 
 document.getElementById('produk-form').addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -688,20 +772,35 @@ document.getElementById('produk-form').addEventListener('submit', async (e) => {
     btn.textContent = 'Menyimpan...';
 
     const id = document.getElementById('produk-id').value;
-    const payload = {
-        category_id: Number(document.getElementById('produk-category').value),
-        name: document.getElementById('produk-name').value.trim(),
-        description: document.getElementById('produk-description').value.trim(),
-        price: Number(document.getElementById('produk-price').value),
-        stock: Number(document.getElementById('produk-stock').value),
-    };
+
+    // Tentukan nilai badge final (dari dropdown, atau dari input custom kalau "Custom..." dipilih)
+    const badgeSelectValue = document.getElementById('produk-badge').value;
+    const badgeFinal = badgeSelectValue === '__custom__'
+        ? document.getElementById('produk-badge-custom').value.trim()
+        : badgeSelectValue;
+
+    const formData = new FormData();
+    formData.append('category_id', document.getElementById('produk-category').value);
+    formData.append('name', document.getElementById('produk-name').value.trim());
+    formData.append('description', document.getElementById('produk-description').value.trim());
+    formData.append('price', document.getElementById('produk-price').value);
+    formData.append('stock', document.getElementById('produk-stock').value);
+    formData.append('badge_label', badgeFinal);
+    formData.append('isi_text', document.getElementById('produk-isi').value.trim());
+    formData.append('min_order_text', document.getElementById('produk-min-order').value.trim());
+
+    const imageFile = document.getElementById('produk-image').files[0];
+    if (imageFile) formData.append('image', imageFile);
 
     try {
         if (id) {
-            await apiFetch(`/products/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+            // Laravel tidak parse file upload di request PUT asli, jadi pakai
+            // method-spoofing: POST + field _method=PUT.
+            formData.append('_method', 'PUT');
+            await apiFetch(`/products/${id}`, { method: 'POST', body: formData });
             showToast('Produk berhasil diperbarui.');
         } else {
-            await apiFetch('/products', { method: 'POST', body: JSON.stringify(payload) });
+            await apiFetch('/products', { method: 'POST', body: formData });
             showToast('Produk berhasil ditambahkan.');
         }
         closeModal('produk-modal');

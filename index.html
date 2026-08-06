@@ -482,6 +482,8 @@
                     <div style="margin-top:6px;display:flex;gap:6px;flex-wrap:wrap;">
                         <button type="button" class="btn small" style="background:#ccc;color:#333;" onclick="rotateCropper(-90)"><i class="fas fa-undo"></i> Putar Kiri</button>
                         <button type="button" class="btn small" style="background:#ccc;color:#333;" onclick="rotateCropper(90)"><i class="fas fa-redo"></i> Putar Kanan</button>
+                        <button type="button" class="btn small" style="background:#ccc;color:#333;" onclick="flipCropper('horizontal')">⇋ Balik Horizontal</button>
+                        <button type="button" class="btn small" style="background:#ccc;color:#333;" onclick="flipCropper('vertical')">⇅ Balik Vertikal</button>
                         <button type="button" class="btn small" style="background:#ccc;color:#333;" onclick="resetCropper()">Reset</button>
                     </div>
                 </div>
@@ -780,6 +782,8 @@ document.getElementById('produk-badge').addEventListener('change', (e) => {
 
 // Cropper.js: begitu file dipilih, buka area crop menggantikan preview biasa
 let cropperInstance = null;
+let cropperFlipX = 1;
+let cropperFlipY = 1;
 
 document.getElementById('produk-image').addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -795,6 +799,8 @@ document.getElementById('produk-image').addEventListener('change', (e) => {
         cropperInstance.destroy();
         cropperInstance = null;
     }
+    cropperFlipX = 1;
+    cropperFlipY = 1;
 
     const reader = new FileReader();
     reader.onload = (ev) => {
@@ -815,8 +821,21 @@ function rotateCropper(deg) {
     if (cropperInstance) cropperInstance.rotate(deg);
 }
 
+function flipCropper(direction) {
+    if (!cropperInstance) return;
+    if (direction === 'horizontal') {
+        cropperFlipX = cropperFlipX * -1;
+        cropperInstance.scaleX(cropperFlipX);
+    } else {
+        cropperFlipY = cropperFlipY * -1;
+        cropperInstance.scaleY(cropperFlipY);
+    }
+}
+
 function resetCropper() {
     if (cropperInstance) cropperInstance.reset();
+    cropperFlipX = 1;
+    cropperFlipY = 1;
 }
 
 document.getElementById('produk-form').addEventListener('submit', async (e) => {

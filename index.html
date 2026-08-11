@@ -547,33 +547,58 @@
 <script>
 const API_BASE_URL = "https://gachifa-backend-production.up.railway.app/api";
 
-// Dibungkus try/catch: kalau browser memblokir localStorage, ini tidak boleh
-// menghentikan eksekusi script (yang berisi semua fungsi panel admin, termasuk
-// tombol login) — cukup anggap belum ada token tersimpan.
+// Cadangan bertingkat: localStorage -> sessionStorage -> memori.
+// Kalau browser memblokir localStorage (mis. mode privasi/anti-tracking),
+// coba sessionStorage (biasanya tidak ikut diblokir). Kalau itu juga
+// diblokir, tetap simpan di memori supaya login tidak gagal total,
+// meskipun sesinya hanya bertahan selama tab tidak ditutup/refresh.
+let inMemoryAdminToken = null;
+
 function getAdminToken() {
     try {
-        return localStorage.getItem("gachifaAdminToken") || null;
+        const fromLocal = localStorage.getItem("gachifaAdminToken");
+        if (fromLocal) return fromLocal;
     } catch (e) {
         console.error('localStorage tidak bisa diakses:', e);
-        return null;
     }
+    try {
+        const fromSession = sessionStorage.getItem("gachifaAdminToken");
+        if (fromSession) return fromSession;
+    } catch (e) {
+        console.error('sessionStorage tidak bisa diakses:', e);
+    }
+    return inMemoryAdminToken;
 }
 
+// Mengembalikan status penyimpanan: 'local', 'session', atau 'memory'
 function saveAdminToken(token) {
+    inMemoryAdminToken = token;
     try {
         localStorage.setItem('gachifaAdminToken', token);
-        return true;
+        return 'local';
     } catch (e) {
-        console.error('Gagal menyimpan sesi admin (localStorage diblokir):', e);
-        return false;
+        console.error('Gagal menyimpan sesi admin ke localStorage (diblokir):', e);
     }
+    try {
+        sessionStorage.setItem('gachifaAdminToken', token);
+        return 'session';
+    } catch (e) {
+        console.error('Gagal menyimpan sesi admin ke sessionStorage (diblokir):', e);
+    }
+    return 'memory';
 }
 
 function clearAdminToken() {
+    inMemoryAdminToken = null;
     try {
         localStorage.removeItem('gachifaAdminToken');
     } catch (e) {
         console.error('localStorage tidak bisa diakses:', e);
+    }
+    try {
+        sessionStorage.removeItem('gachifaAdminToken');
+    } catch (e) {
+        console.error('sessionStorage tidak bisa diakses:', e);
     }
 }
 
@@ -644,10 +669,11 @@ document.getElementById('login-form').addEventListener('submit', async (e) => {
         }
 
         authToken = data.token;
-        if (!saveAdminToken(authToken)) {
-            errorEl.textContent = 'Login berhasil, tapi browser ini memblokir penyimpanan data lokal sehingga sesi tidak bisa disimpan. Coba matikan mode privasi/blokir cookie situs.';
-            errorEl.style.display = 'block';
-            return;
+        const storageMode = saveAdminToken(authToken);
+        if (storageMode === 'session') {
+            showToast('Login berhasil. Sesi akan hilang jika tab ditutup (penyimpanan lokal diblokir browser).');
+        } else if (storageMode === 'memory') {
+            showToast('Login berhasil, tapi sesi hanya bertahan selama tab ini terbuka (browser memblokir penyimpanan data).');
         }
         enterAdminApp();
     } catch (err) {

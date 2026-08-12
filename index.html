@@ -563,6 +563,17 @@
     </div>
 </div>
 
+<div class="modal-overlay" id="confirm-modal" onclick="if(event.target===this) closeConfirmModal()">
+    <div class="modal-box" style="max-width:380px;text-align:center;">
+        <h3 id="confirm-modal-title" style="color:#c0392b;">Hapus Data?</h3>
+        <p id="confirm-modal-text" style="color:#555;">Tindakan ini tidak bisa dibatalkan.</p>
+        <div class="modal-actions" style="justify-content:center;">
+            <button type="button" class="btn" style="background:#ccc;color:#333;" onclick="closeConfirmModal()">Batal</button>
+            <button type="button" class="btn danger" id="confirm-modal-ok">Ya, Hapus</button>
+        </div>
+    </div>
+</div>
+
 <div class="toast" id="admin-toast"></div>
 
 <script>
@@ -650,6 +661,32 @@ async function apiFetch(path, options = {}) {
 
 function openModal(id) { document.getElementById(id).classList.add('show'); }
 function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+
+function showConfirmModal(text, onConfirm) {
+    const overlay = document.getElementById('confirm-modal');
+    const textEl = document.getElementById('confirm-modal-text');
+    const okBtn = document.getElementById('confirm-modal-ok');
+    if (!overlay || !okBtn) return;
+
+    textEl.textContent = text;
+
+    const newOkBtn = okBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+
+    newOkBtn.addEventListener('click', function() {
+        closeConfirmModal();
+        onConfirm();
+    });
+
+    overlay.classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+
+function closeConfirmModal() {
+    const overlay = document.getElementById('confirm-modal');
+    if (overlay) overlay.classList.remove('show');
+    document.body.style.overflow = '';
+}
 
 /* ===== LOGIN / LOGOUT ===== */
 document.getElementById('login-form').addEventListener('submit', async (e) => {
@@ -967,16 +1004,17 @@ document.getElementById('produk-form').addEventListener('submit', async (e) => {
     }
 });
 
-async function deleteProduct(id) {
-    if (!confirm('Hapus produk ini?')) return;
-    try {
-        await apiFetch(`/products/${id}`, { method: 'DELETE' });
-        showToast('Produk dihapus.');
-        loadProducts();
-        loadDashboard();
-    } catch (err) {
-        showToast(err.message, true);
-    }
+function deleteProduct(id) {
+    showConfirmModal('Hapus produk ini?', async function() {
+        try {
+            await apiFetch(`/products/${id}`, { method: 'DELETE' });
+            showToast('Produk dihapus.');
+            loadProducts();
+            loadDashboard();
+        } catch (err) {
+            showToast(err.message, true);
+        }
+    });
 }
 
 /* ===== KATEGORI ===== */
@@ -1043,16 +1081,17 @@ document.getElementById('kategori-form').addEventListener('submit', async (e) =>
     }
 });
 
-async function deleteCategory(id) {
-    if (!confirm('Hapus kategori ini? Produk di dalamnya juga akan ikut terhapus.')) return;
-    try {
-        await apiFetch(`/categories/${id}`, { method: 'DELETE' });
-        showToast('Kategori dihapus.');
-        loadCategories();
-        loadProducts();
-    } catch (err) {
-        showToast(err.message, true);
-    }
+function deleteCategory(id) {
+    showConfirmModal('Hapus kategori ini? Produk di dalamnya juga akan ikut terhapus.', async function() {
+        try {
+            await apiFetch(`/categories/${id}`, { method: 'DELETE' });
+            showToast('Kategori dihapus.');
+            loadCategories();
+            loadProducts();
+        } catch (err) {
+            showToast(err.message, true);
+        }
+    });
 }
 
 /* ===== ORDER ===== */
@@ -1103,16 +1142,17 @@ async function updateOrderStatus(id, status) {
     }
 }
 
-async function deleteOrder(id) {
-    if (!confirm('Hapus order ini?')) return;
-    try {
-        await apiFetch(`/orders/${id}`, { method: 'DELETE' });
-        showToast('Order dihapus.');
-        loadOrders();
-        loadDashboard();
-    } catch (err) {
-        showToast(err.message, true);
-    }
+function deleteOrder(id) {
+    showConfirmModal('Hapus order ini?', async function() {
+        try {
+            await apiFetch(`/orders/${id}`, { method: 'DELETE' });
+            showToast('Order dihapus.');
+            loadOrders();
+            loadDashboard();
+        } catch (err) {
+            showToast(err.message, true);
+        }
+    });
 }
 
 /* ===== PESAN MASUK ===== */
@@ -1140,16 +1180,17 @@ async function loadContacts() {
     }
 }
 
-async function deleteContact(id) {
-    if (!confirm('Hapus pesan ini?')) return;
-    try {
-        await apiFetch(`/contact/${id}`, { method: 'DELETE' });
-        showToast('Pesan dihapus.');
-        loadContacts();
-        loadDashboard();
-    } catch (err) {
-        showToast(err.message, true);
-    }
+function deleteContact(id) {
+    showConfirmModal('Hapus pesan ini?', async function() {
+        try {
+            await apiFetch(`/contact/${id}`, { method: 'DELETE' });
+            showToast('Pesan dihapus.');
+            loadContacts();
+            loadDashboard();
+        } catch (err) {
+            showToast(err.message, true);
+        }
+    });
 }
 
 /* ===== PELANGGAN ===== */

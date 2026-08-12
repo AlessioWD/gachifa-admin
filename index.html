@@ -568,20 +568,15 @@
 <script>
 const API_BASE_URL = "https://gachifa-backend-production.up.railway.app/api";
 
-// Cadangan bertingkat: localStorage -> sessionStorage -> memori.
-// Kalau browser memblokir localStorage (mis. mode privasi/anti-tracking),
-// coba sessionStorage (biasanya tidak ikut diblokir). Kalau itu juga
-// diblokir, tetap simpan di memori supaya login tidak gagal total,
-// meskipun sesinya hanya bertahan selama tab tidak ditutup/refresh.
+// Sesi admin sengaja TIDAK disimpan permanen (localStorage). Ini panel admin
+// yang bisa ubah data produk/order/pelanggan, jadi demi keamanan token hanya
+// disimpan di sessionStorage: otomatis hilang begitu tab/browser ditutup,
+// dan wajib login ulang tiap buka sesi baru. Selama tab masih terbuka,
+// sesi tetap jalan normal (tidak ke-logout sendiri di tengah kerja).
+// Cadangan: sessionStorage -> memori (kalau browser blokir sessionStorage juga).
 let inMemoryAdminToken = null;
 
 function getAdminToken() {
-    try {
-        const fromLocal = localStorage.getItem("gachifaAdminToken");
-        if (fromLocal) return fromLocal;
-    } catch (e) {
-        console.error('localStorage tidak bisa diakses:', e);
-    }
     try {
         const fromSession = sessionStorage.getItem("gachifaAdminToken");
         if (fromSession) return fromSession;
@@ -591,15 +586,9 @@ function getAdminToken() {
     return inMemoryAdminToken;
 }
 
-// Mengembalikan status penyimpanan: 'local', 'session', atau 'memory'
+// Mengembalikan status penyimpanan: 'session' atau 'memory'
 function saveAdminToken(token) {
     inMemoryAdminToken = token;
-    try {
-        localStorage.setItem('gachifaAdminToken', token);
-        return 'local';
-    } catch (e) {
-        console.error('Gagal menyimpan sesi admin ke localStorage (diblokir):', e);
-    }
     try {
         sessionStorage.setItem('gachifaAdminToken', token);
         return 'session';
@@ -611,11 +600,6 @@ function saveAdminToken(token) {
 
 function clearAdminToken() {
     inMemoryAdminToken = null;
-    try {
-        localStorage.removeItem('gachifaAdminToken');
-    } catch (e) {
-        console.error('localStorage tidak bisa diakses:', e);
-    }
     try {
         sessionStorage.removeItem('gachifaAdminToken');
     } catch (e) {

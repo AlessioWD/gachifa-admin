@@ -63,7 +63,9 @@
         border-color: var(--primary);
     }
     .btn {
-        display: inline-block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
         background: var(--primary);
         color: white;
         border: none;
@@ -73,6 +75,9 @@
         font-size: 0.95rem;
         font-weight: 600;
         transition: 0.25s;
+        touch-action: manipulation;
+        -webkit-tap-highlight-color: rgba(139, 94, 60, 0.25);
+        user-select: none;
     }
     .btn:hover { background: var(--primary-dark); }
     .btn.full { width: 100%; }
@@ -116,6 +121,7 @@
         border-radius: 10px;
         border-left: none;
         transition: background 0.2s, color 0.2s;
+        touch-action: manipulation;
     }
     .sidebar nav a i { width: 18px; text-align: center; opacity: 0.85; }
     .sidebar nav a:hover { background: rgba(255,255,255,0.06); color: white; }
@@ -190,7 +196,7 @@
         background: rgba(0,0,0,0.4);
         align-items: center;
         justify-content: center;
-        z-index: 100;
+        z-index: 500;
         padding: 20px;
     }
     .modal-overlay.show { display: flex; }
@@ -253,13 +259,19 @@
         }
         .mobile-topbar-brand img { width: 52px; }
         .hamburger-btn {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             background: transparent;
             border: none;
             color: white;
             font-size: 1.4rem;
             cursor: pointer;
-            padding: 4px 8px;
+            padding: 8px;
+            min-width: 44px;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(255,255,255,0.2);
         }
         .mobile-nav-overlay.show {
             display: block;
@@ -291,16 +303,22 @@
         .sidebar.mobile-show { transform: translateX(0); }
         .sidebar .brand { display: block; }
         .sidebar-close-btn {
-            display: block;
+            display: flex;
+            align-items: center;
+            justify-content: center;
             position: absolute;
-            top: -4px;
-            left: 10px;
+            top: -6px;
+            left: 6px;
             background: transparent;
             border: none;
             color: #c9beb5;
             font-size: 1.8rem;
             line-height: 1;
             cursor: pointer;
+            min-width: 44px;
+            min-height: 44px;
+            touch-action: manipulation;
+            -webkit-tap-highlight-color: rgba(255,255,255,0.15);
         }
         .sidebar-close-btn:hover { color: white; }
         .sidebar nav {
@@ -320,7 +338,15 @@
         .panel { padding: 16px; }
         .panel-header select { width: 100%; }
         .modal-actions { flex-wrap: wrap; }
-        .modal-actions .btn { flex: 1 1 auto; }
+        .modal-actions .btn { flex: 1 1 auto; min-height: 46px; }
+
+        /* Perbesar area sentuh tombol Edit/Hapus di semua tabel admin (khusus mobile) */
+        .btn.small {
+            padding: 10px 16px;
+            font-size: 0.85rem;
+            min-height: 42px;
+        }
+        .table-actions { gap: 8px; }
     }
 
     @media (max-width: 380px) {
@@ -659,8 +685,20 @@ async function apiFetch(path, options = {}) {
     return data;
 }
 
-function openModal(id) { document.getElementById(id).classList.add('show'); }
-function closeModal(id) { document.getElementById(id).classList.remove('show'); }
+function openModal(id) {
+    // Pastikan menu mobile (hamburger) tertutup & scroll body tidak "nyangkut"
+    // sebelum modal dibuka, supaya tidak ada lapisan tak terlihat yang menutupi tombol.
+    const sidebar = document.getElementById('admin-sidebar');
+    const navOverlay = document.getElementById('mobile-nav-overlay');
+    if (sidebar) sidebar.classList.remove('mobile-show');
+    if (navOverlay) navOverlay.classList.remove('show');
+    document.getElementById(id).classList.add('show');
+    document.body.style.overflow = 'hidden';
+}
+function closeModal(id) {
+    document.getElementById(id).classList.remove('show');
+    document.body.style.overflow = '';
+}
 
 function showConfirmModal(text, onConfirm) {
     const overlay = document.getElementById('confirm-modal');

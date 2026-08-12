@@ -25,6 +25,14 @@
 
 html {
     scroll-behavior: smooth;
+    /* Ukuran font dasar menyesuaikan lebar layar secara halus:
+       - HP kecil (~320px)  -> sekitar 14px
+       - HP besar/tablet    -> naik bertahap
+       - Desktop (~1440px+) -> maksimal 17px
+       Karena semua font-size di file ini pakai rem, seluruh teks
+       di web (judul, paragraf, badge, tombol, dst) ikut menyesuaikan
+       otomatis tanpa perlu diubah satu-satu. */
+    font-size: clamp(14px, 12px + 0.35vw, 17px);
 }
 
 body {
@@ -592,6 +600,137 @@ header {
     color: var(--primary);
 }
 
+/* ===== CONFIRM MODAL (pengganti confirm() bawaan browser) ===== */
+.confirm-modal-overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: rgba(44, 26, 20, 0.6);
+    z-index: 2100;
+    align-items: center;
+    justify-content: center;
+    padding: 20px;
+}
+
+.confirm-modal-overlay.confirm-modal-show {
+    display: flex;
+}
+
+.confirm-modal-box {
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 32px 28px 28px;
+    max-width: 360px;
+    width: 100%;
+    text-align: center;
+    box-shadow: 0 20px 50px rgba(0,0,0,0.3);
+    animation: confirmModalPop 0.2s ease;
+}
+
+@keyframes confirmModalPop {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
+}
+
+.confirm-modal-icon {
+    width: 56px;
+    height: 56px;
+    margin: 0 auto 16px;
+    border-radius: 50%;
+    background: rgba(200, 90, 60, 0.12);
+    color: var(--secondary);
+    font-size: 1.4rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.confirm-modal-box h3 {
+    color: var(--primary);
+    font-size: 1.15rem;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.confirm-modal-box p {
+    color: #777;
+    font-size: 0.92rem;
+    line-height: 1.5;
+    margin-bottom: 22px;
+}
+
+.confirm-modal-actions {
+    display: flex;
+    gap: 10px;
+}
+
+.btn-confirm-cancel,
+.btn-confirm-ok {
+    flex: 1;
+    padding: 11px 0;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.92rem;
+    cursor: pointer;
+    transition: 0.3s;
+    border: none;
+}
+
+.btn-confirm-cancel {
+    background: var(--cream);
+    color: var(--primary);
+}
+
+.btn-confirm-cancel:hover {
+    background: #e5dbc9;
+}
+
+.btn-confirm-ok {
+    background: var(--secondary);
+    color: white;
+}
+
+.btn-confirm-ok:hover {
+    background: var(--primary);
+}
+
+.btn-confirm-cancel:active,
+.btn-confirm-ok:active {
+    transform: scale(0.96);
+}
+
+@media (max-width: 380px) {
+    .confirm-modal-box {
+        padding: 26px 20px 22px;
+    }
+
+    .confirm-modal-icon {
+        width: 48px;
+        height: 48px;
+        font-size: 1.2rem;
+        margin-bottom: 12px;
+    }
+
+    .confirm-modal-box h3 {
+        font-size: 1.05rem;
+    }
+
+    .confirm-modal-box p {
+        font-size: 0.87rem;
+        margin-bottom: 18px;
+    }
+
+    .confirm-modal-actions {
+        flex-direction: column-reverse;
+        gap: 8px;
+    }
+
+    .btn-confirm-cancel,
+    .btn-confirm-ok {
+        padding: 12px 0;
+    }
+}
+
 .riwayat-empty {
     color: #888;
     font-size: 0.9rem;
@@ -678,9 +817,11 @@ header {
 
 .card-body h3 {
     font-weight: 600;
-    font-size: 1.3rem;
+    font-size: 1.45rem;
     color: var(--dark);
     margin-bottom: 10px;
+    min-height: 2.2em;
+    line-height: 1.1;
 }
 
 .card-body p {
@@ -691,11 +832,19 @@ header {
     margin-bottom: 10px;
 }
 
+.min-order-wrap {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 3.4em;
+    margin-bottom: 12px;
+}
+
 .min-order {
     color: var(--accent);
     font-size: 0.85rem;
     font-weight: 700;
-    margin: 0 0 12px;
+    margin: 0;
     background-color: var(--kuningMuda);
     padding: 7px 16px;
     border-radius: 50px;
@@ -703,9 +852,12 @@ header {
     align-items: center;
     justify-content: center;
     gap: 6px;
-    align-self: center;
     text-align: center;
     line-height: 1.3;
+}
+
+.min-order-empty {
+    visibility: hidden;
 }
 
 .price {
@@ -1088,6 +1240,47 @@ footer h3 .brand-coklat {
     border-color: var(--primary);
 }
 
+.password-wrapper {
+    display: flex;
+    align-items: center;
+    border: 1px solid #ddd;
+    border-radius: 10px;
+    background: #fff;
+    transition: 0.25s;
+}
+
+.password-wrapper:focus-within {
+    border-color: var(--primary);
+}
+
+.password-wrapper input {
+    flex: 1;
+    min-width: 0;
+    border: none;
+    background: transparent;
+    padding: 12px 8px 12px 14px;
+}
+
+.password-wrapper input:focus {
+    outline: none;
+}
+
+.toggle-password {
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    cursor: pointer;
+    color: #888;
+    padding: 0 12px;
+}
+
+.toggle-password:hover {
+    color: var(--primary);
+}
+
 .contact-form-status {
     margin-top: 15px;
     padding: 12px 14px;
@@ -1212,6 +1405,14 @@ footer h3 .brand-coklat {
     justify-content: center;
 }
 
+.category-desc {
+    text-align: center;
+    color: #7a7168;
+    font-size: 0.92rem;
+    margin: -6px 0 18px;
+    font-style: italic;
+}
+
 .category-btn {
     background: var(--white);
     border: 1.5px solid #e6dcd3;
@@ -1258,6 +1459,8 @@ footer h3 .brand-coklat {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
     margin-bottom: 20px;
     padding-bottom: 15px;
     border-bottom: 2px solid var(--cream);
@@ -1269,22 +1472,84 @@ footer h3 .brand-coklat {
     font-size: 1.4rem;
 }
 
+.keranjang-header-right {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 #keranjang-count {
     background: var(--primary);
     color: white;
     padding: 5px 15px;
     border-radius: 20px;
     font-size: 0.9rem;
+    white-space: nowrap;
+}
+
+.btn-clear-cart {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: transparent;
+    color: var(--secondary);
+    border: 1.5px solid var(--secondary);
+    padding: 5px 14px;
+    border-radius: 50px;
+    font-size: 0.85rem;
+    font-weight: 500;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: 0.3s;
+}
+
+.btn-clear-cart:hover {
+    background: var(--secondary);
+    color: white;
+}
+
+.btn-clear-cart:active {
+    transform: scale(0.95);
+}
+
+@media (max-width: 768px) {
+    .keranjang-section {
+        padding: 28px 6%;
+        margin: 30px 4%;
+    }
+
+    .keranjang-header h2 {
+        font-size: 1.2rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .keranjang-header {
+        justify-content: flex-start;
+    }
+
+    .keranjang-header-right {
+        width: 100%;
+        justify-content: space-between;
+    }
 }
 
 .keranjang-item {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 10px;
     padding: 15px;
     background: var(--cream);
     margin-bottom: 10px;
     border-radius: 14px;
+}
+
+.keranjang-item > div:first-child {
+    min-width: 0;
+    overflow-wrap: break-word;
+    word-break: break-word;
 }
 
 .btn-hapus {
@@ -1295,6 +1560,8 @@ footer h3 .brand-coklat {
     border-radius: 50px;
     cursor: pointer;
     transition: 0.3s;
+    flex-shrink: 0;
+    white-space: nowrap;
 }
 
 .btn-hapus:hover {
@@ -1406,6 +1673,11 @@ footer h3 .brand-coklat {
     opacity: 1;
 }
 
+.toast.toast-warning::before {
+    content: '\f071';
+    color: #ffb020;
+}
+
 /* ===== RESPONSIVE ===== */
 @media (max-width: 900px) {
     .footer-container {
@@ -1474,8 +1746,8 @@ footer h3 .brand-coklat {
         right: 0;
         height: 100vh;
         height: 100dvh;
-        width: 60%;
-        max-width: 235px;
+        width: 68%;
+        max-width: 260px;
         flex-direction: column;
         gap: 0;
         background: var(--white);
@@ -1484,7 +1756,7 @@ footer h3 .brand-coklat {
         padding-bottom: env(safe-area-inset-bottom);
         margin: 0;
         z-index: 1500;
-        border-radius: 18px 0 0 18px;
+        border-radius: 22px 0 0 22px;
         overflow-y: auto;
         overflow-x: hidden;
         transform: translateX(100%);
@@ -1500,7 +1772,8 @@ footer h3 .brand-coklat {
     }
 
     .nav-links li:not(.nav-close-item) {
-        border-bottom: 1px solid var(--cream);
+        border-bottom: none;
+        padding: 0 12px;
     }
 
     .nav-links li:last-child {
@@ -1512,54 +1785,102 @@ footer h3 .brand-coklat {
         align-items: center;
         justify-content: space-between;
         width: 100% !important;
-        padding: 16px 18px;
-        background: var(--cream);
+        padding: 26px 20px 22px;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        border-radius: 22px 0 0 0;
+        position: relative;
+        overflow: hidden;
+    }
+
+    .nav-close-item::after {
+        content: "";
+        position: absolute;
+        width: 90px;
+        height: 90px;
+        background: rgba(255,255,255,0.08);
+        border-radius: 50%;
+        top: -30px;
+        right: -20px;
     }
 
     .nav-panel-title {
         font-family: 'Fredoka', sans-serif;
         font-weight: 600;
-        color: var(--primary);
-        font-size: 1rem;
+        color: var(--white);
+        font-size: 1.05rem;
         letter-spacing: 0.2px;
+        position: relative;
+        z-index: 1;
     }
 
     .nav-close-btn {
-        background: none;
+        background: rgba(255,255,255,0.18);
         border: none;
-        font-size: 1.4rem;
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        font-size: 1.2rem;
         line-height: 1;
-        color: #888;
+        color: var(--white);
         cursor: pointer;
-        padding: 0 2px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        z-index: 1;
     }
 
     .nav-close-btn:hover {
-        color: var(--primary);
+        background: rgba(255,255,255,0.32);
+        color: var(--white);
+    }
+
+    .nav-links nav ul,
+    .nav-links {
+        padding-top: 0;
     }
 
     .nav-links a {
         display: flex;
         align-items: center;
         width: 100%;
-        padding: 13px 18px;
+        margin: 6px 0;
+        padding: 12px 14px;
         font-size: 0.9rem !important;
         color: var(--dark);
-        border-radius: 0;
+        border-radius: 14px;
+        transition: background 0.2s ease, color 0.2s ease, transform 0.15s ease;
+    }
+
+    .nav-links a:active {
+        transform: scale(0.98);
     }
 
     .nav-icon {
-        display: inline-block !important;
-        width: 18px;
-        margin-right: 10px;
+        display: inline-flex !important;
+        align-items: center;
+        justify-content: center;
+        width: 30px;
+        height: 30px;
+        margin-right: 12px;
         text-align: center;
         color: var(--primary);
-        font-size: 0.85rem;
+        background: var(--kuningMuda);
+        border-radius: 10px;
+        font-size: 0.8rem;
+        flex-shrink: 0;
     }
 
     .nav-links a.active {
-        color: var(--primary);
-        background: var(--kuningMuda);
+        color: var(--white);
+        background: linear-gradient(135deg, var(--primary), var(--kuning));
+        box-shadow: 0 6px 14px rgba(139, 94, 60, 0.3);
+    }
+
+    .nav-links a.active .nav-icon {
+        background: rgba(255,255,255,0.25);
+        color: var(--white);
     }
 
     .nav-links a::after {
@@ -1717,8 +2038,10 @@ footer h3 .brand-coklat {
     }
 
     .card-body h3 {
-        font-size: 0.9rem;
+        font-size: 1.05rem;
         margin-bottom: 6px;
+        min-height: 2.3em;
+        line-height: 1.15;
     }
 
     .card-body p {
@@ -1728,11 +2051,17 @@ footer h3 .brand-coklat {
         margin-bottom: 6px;
     }
 
+    .min-order-wrap {
+        min-height: 2.3em;
+        margin-bottom: 8px;
+    }
+
     .min-order {
         font-size: 0.62rem !important;
-        padding: 3px 9px;
-        margin-bottom: 8px;
+        padding: 3px 16px;
+        margin-bottom: 0;
         gap: 4px;
+        line-height: 1.15;
     }
 
     .price {

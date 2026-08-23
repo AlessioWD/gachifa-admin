@@ -424,8 +424,8 @@
                     <button class="btn" onclick="openProductModal()"><i class="fas fa-plus"></i> Tambah Produk</button>
                 </div>
                 <table>
-                    <thead><tr><th>Nama</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Aksi</th></tr></thead>
-                    <tbody id="produk-tbody"><tr><td colspan="5" class="empty-msg">Memuat...</td></tr></tbody>
+                    <thead><tr><th>Urutan</th><th>Nama</th><th>Kategori</th><th>Harga</th><th>Stok</th><th>Aksi</th></tr></thead>
+                    <tbody id="produk-tbody"><tr><td colspan="6" class="empty-msg">Memuat...</td></tr></tbody>
                 </table>
             </div>
         </section>
@@ -439,8 +439,8 @@
                     <button class="btn" onclick="openCategoryModal()"><i class="fas fa-plus"></i> Tambah Kategori</button>
                 </div>
                 <table>
-                    <thead><tr><th>Nama</th><th>Deskripsi</th><th>Jumlah Produk</th><th>Aksi</th></tr></thead>
-                    <tbody id="kategori-tbody"><tr><td colspan="4" class="empty-msg">Memuat...</td></tr></tbody>
+                    <thead><tr><th>Urutan</th><th>Nama</th><th>Deskripsi</th><th>Jumlah Produk</th><th>Aksi</th></tr></thead>
+                    <tbody id="kategori-tbody"><tr><td colspan="5" class="empty-msg">Memuat...</td></tr></tbody>
                 </table>
             </div>
         </section>
@@ -646,6 +646,7 @@ function clearAdminToken() {
 
 let authToken = getAdminToken();
 let categoriesCache = [];
+let productsCache = [];
 
 /* ===== HELPER ===== */
 function showToast(msg, isError = false) {
@@ -831,13 +832,26 @@ async function loadDashboard() {
 async function loadProducts() {
     const tbody = document.getElementById('produk-tbody');
     try {
-        const products = await apiFetch('/products');
-        if (!products.length) {
-            tbody.innerHTML = '<tr><td colspan="5" class="empty-msg">Belum ada produk.</td></tr>';
+        productsCache = await apiFetch('/products');
+        if (!productsCache.length) {
+            tbody.innerHTML = '<tr><td colspan="6" class="empty-msg">Belum ada produk.</td></tr>';
             return;
         }
-        tbody.innerHTML = products.map(p => `
+        renderProductRows();
+    } catch (err) {
+        tbody.innerHTML = `<tr><td colspan="6" class="empty-msg">${err.message}</td></tr>`;
+    }
+}
+
+function renderProductRows() {
+    const tbody = document.getElementById('produk-tbody');
+    const arr = productsCache;
+    tbody.innerHTML = arr.map((p, i) => `
             <tr>
+                <td class="table-actions" style="white-space:nowrap;">
+                    <button class="btn small" title="Naikkan" ${i === 0 ? 'disabled' : ''} onclick="moveProduct(${i}, -1)"><i class="fas fa-arrow-up"></i></button>
+                    <button class="btn small" title="Turunkan" ${i === arr.length - 1 ? 'disabled' : ''} onclick="moveProduct(${i}, 1)"><i class="fas fa-arrow-down"></i></button>
+                </td>
                 <td>${p.name}</td>
                 <td>${p.category ? p.category.name : '-'}</td>
                 <td>${formatRupiah(p.price)}</td>
@@ -848,8 +862,24 @@ async function loadProducts() {
                 </td>
             </tr>
         `).join('');
+}
+
+async function moveProduct(index, direction) {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= productsCache.length) return;
+
+    const arr = productsCache;
+    [arr[index], arr[newIndex]] = [arr[newIndex], arr[index]];
+    renderProductRows();
+
+    try {
+        await apiFetch('/products/reorder', {
+            method: 'POST',
+            body: JSON.stringify({ ids: arr.map(p => p.id) }),
+        });
     } catch (err) {
-        tbody.innerHTML = `<tr><td colspan="5" class="empty-msg">${err.message}</td></tr>`;
+        showToast(err.message, true);
+        loadProducts(); // gagal simpan, muat ulang urutan asli dari server
     }
 }
 
@@ -1065,8 +1095,12 @@ async function loadCategories() {
             tbody.innerHTML = '<tr><td colspan="4" class="empty-msg">Belum ada kategori.</td></tr>';
             return;
         }
-        tbody.innerHTML = categories.map(c => `
+        tbody.innerHTML = categories.map((c, i) => `
             <tr>
+                <td class="table-actions" style="white-space:nowrap;">
+                    <button class="btn small" title="Naikkan" ${i === 0 ? 'disabled' : ''} onclick="moveCategory(${i}, -1)"><i class="fas fa-arrow-up"></i></button>
+                    <button class="btn small" title="Turunkan" ${i === categories.length - 1 ? 'disabled' : ''} onclick="moveCategory(${i}, 1)"><i class="fas fa-arrow-down"></i></button>
+                </td>
                 <td>${c.name}</td>
                 <td>${c.description || '-'}</td>
                 <td>${c.products_count ?? 0}</td>
@@ -1078,6 +1112,42 @@ async function loadCategories() {
         `).join('');
     } catch (err) {
         tbody.innerHTML = `<tr><td colspan="4" class="empty-msg">${err.message}</td></tr>`;
+    }
+}
+
+async function moveCategory(index, direction) {
+    const newIndex = index + direction;
+    if (newIndex < 0 || newIndex >= categoriesCache.length) return;
+
+    // Tukar posisi di cache lokal dulu supaya tampilan langsung responsif.
+    const arr = categoriesCache;
+    [arr[index], arr[newIndex]] = [arr[newIndex], arr[index]];
+
+    const tbody = document.getElementById('kategori-tbody');
+    tbody.innerHTML = arr.map((c, i) => `
+            <tr>
+                <td class="table-actions" style="white-space:nowrap;">
+                    <button class="btn small" title="Naikkan" ${i === 0 ? 'disabled' : ''} onclick="moveCategory(${i}, -1)"><i class="fas fa-arrow-up"></i></button>
+                    <button class="btn small" title="Turunkan" ${i === arr.length - 1 ? 'disabled' : ''} onclick="moveCategory(${i}, 1)"><i class="fas fa-arrow-down"></i></button>
+                </td>
+                <td>${c.name}</td>
+                <td>${c.description || '-'}</td>
+                <td>${c.products_count ?? 0}</td>
+                <td class="table-actions">
+                    <button class="btn small" onclick='openCategoryModal(${JSON.stringify(c)})'>Edit</button>
+                    <button class="btn small danger" onclick="deleteCategory(${c.id})">Hapus</button>
+                </td>
+            </tr>
+        `).join('');
+
+    try {
+        await apiFetch('/categories/reorder', {
+            method: 'POST',
+            body: JSON.stringify({ ids: arr.map(c => c.id) }),
+        });
+    } catch (err) {
+        showToast(err.message, true);
+        loadCategories(); // gagal simpan, muat ulang urutan asli dari server
     }
 }
 
